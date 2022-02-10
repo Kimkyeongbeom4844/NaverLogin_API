@@ -27,14 +27,14 @@ app.get('/', function (req, res) {
      };
     request.get(options, function (error, response, body) {
       if (!error && response.statusCode == 200) {
-        console.log('-------------------User Login-------------------');
+        console.log('----------------------------Token Issuance----------------------------');
         console.log('-------------------Token Info-------------------');
         token = JSON.parse(body);
         console.log(token);
         accesstoken = JSON.parse(body).access_token;
         // expire_url = `https://nid.naver.com/oauth2.0/token?grant_type=delete&client_id=${client_id}&client_secret=${client_secret}&access_token=${token}&service_provider=NAVER`
         res.writeHead(200, {'Content-Type': 'text/html;charset=utf-8'});
-        res.end(`<a href="/expire">로그아웃</a><br><a href="/member">회원정보조회</a>`);
+        res.end(`<h1>안녕하세요</h1><h2>게시판 메인페이지입니다</h2><a href="/expire">로그아웃</a><br><a href="/member">회원정보조회</a>`);
         // res.end(body)  
       } else {
         res.status(response.statusCode).end();
@@ -51,7 +51,7 @@ app.get('/', function (req, res) {
      };
     request.get(options, function (error, response, body) {
       if (!error && response.statusCode == 200) {
-        console.log('-------------------User Logout-------------------')
+        console.log('----------------------------User Logout----------------------------')
         res.writeHead(302,{Location : `https://nid.naver.com/oauth2.0/authorize?response_type=code&state=${state}&redirect_uri=${redirectURI}&client_id=${client_id}&oauth_os=&inapp_view=&locale=ko_KR&auth_type=reauthenticate`});
         res.end();
       } else {
@@ -74,7 +74,7 @@ app.get('/', function (req, res) {
       if (!error && response.statusCode == 200) {
         res.writeHead(200, {'Content-Type': 'text/html;charset=utf-8'});
         res.end(`<a href="/main">메인으로<a>`);
-        console.log('-------------------User Info-------------------')
+        console.log('-------------------Token Destruction-------------------')
         console.log(JSON.parse(body));
       } else {
         console.log('error');
@@ -87,10 +87,10 @@ app.get('/', function (req, res) {
   });
   app.get('/main',function(req,res){
     res.writeHead(200, {'Content-Type': 'text/html;charset=utf-8'});
-    res.end(`<a href="/expire">로그아웃</a><br><a href="/member">회원정보조회</a>`);
+    res.end(`<h1>안녕하세요</h1><h2>게시판 메인페이지입니다</h2><a href="/expire">로그아웃</a><br><a href="/member">회원정보조회</a>`);
     console.log('-------------------Token Info-------------------');
     console.log(token);
   });
  app.listen(3000, function () {
-   console.log('http://127.0.0.1:3000/ app listening on port 3000!');
+   console.log('http://127.0.0.1:3000/ LoginAPI Server is running');
  });
