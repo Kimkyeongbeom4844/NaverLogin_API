@@ -4,7 +4,7 @@ var fs = require('fs');
 var app = express();
 var client_id = 'BR9wjsBukM0NVGtNUjSC';
 var client_secret = 'I1qzVZcrAP';
-var state = "123456789";
+var state = Math.round(Math.random()*100000000);
 var redirectURI = encodeURI("http://127.0.0.1:3000/callback");
 var api_url = "";
 var token = "";
@@ -27,6 +27,7 @@ app.get('/', function (req, res) {
      };
     request.get(options, function (error, response, body) {
       if (!error && response.statusCode == 200) {
+        console.log('-------------------User Login-------------------');
         console.log('-------------------Token Info-------------------');
         token = JSON.parse(body);
         console.log(token);
@@ -50,7 +51,8 @@ app.get('/', function (req, res) {
      };
     request.get(options, function (error, response, body) {
       if (!error && response.statusCode == 200) {
-        res.writeHead(302,{Location : `https://nid.naver.com/oauth2.0/authorize?response_type=code&state=${state}&redirect_uri=http%3A%2F%2F127.0.0.1%3A3000%2Fcallback&client_id=BR9wjsBukM0NVGtNUjSC&oauth_os=&inapp_view=&locale=ko_KR&auth_type=reauthenticate`});
+        console.log('-------------------User Logout-------------------')
+        res.writeHead(302,{Location : `https://nid.naver.com/oauth2.0/authorize?response_type=code&state=${state}&redirect_uri=${redirectURI}&client_id=${client_id}&oauth_os=&inapp_view=&locale=ko_KR&auth_type=reauthenticate`});
         res.end();
       } else {
         console.log('error');
