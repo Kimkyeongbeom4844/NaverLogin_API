@@ -9,7 +9,7 @@ var redirectURI = encodeURI("http://127.0.0.1:3000/callback");
 var api_url = "";
 var token = "";
 var accesstoken = "";
-// var header = "Bearer " + token; //왜 header라고 쓰면 오류가 뜨지?? var let 스코프 차이인가???
+// var header = "Bearer " + token; //왜 header라고 쓰면 오류가 뜨지?? var let 스코프 차이인가??
 app.get('/', function (req, res) {
   api_url = 'https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=' + client_id + '&redirect_uri=' + redirectURI + '&state=' + state;
    res.writeHead(200, {'Content-Type': 'text/html;charset=utf-8'});
@@ -27,7 +27,7 @@ app.get('/', function (req, res) {
      };
     request.get(options, function (error, response, body) {
       if (!error && response.statusCode == 200) {
-        console.log('----------------------------Token Issuance----------------------------');
+        console.log('----------------------------토큰 생성----------------------------');
         console.log('-------------------Token Info-------------------');
         token = JSON.parse(body);
         console.log(token);
@@ -51,7 +51,7 @@ app.get('/', function (req, res) {
      };
     request.get(options, function (error, response, body) {
       if (!error && response.statusCode == 200) {
-        console.log('----------------------------User Logout----------------------------')
+        console.log('----------------------------로그아웃----------------------------')
         res.writeHead(302,{Location : `https://nid.naver.com/oauth2.0/authorize?response_type=code&state=${state}&redirect_uri=${redirectURI}&client_id=${client_id}&oauth_os=&inapp_view=&locale=ko_KR&auth_type=reauthenticate`});
         res.end();
       } else {
@@ -74,7 +74,7 @@ app.get('/', function (req, res) {
       if (!error && response.statusCode == 200) {
         res.writeHead(200, {'Content-Type': 'text/html;charset=utf-8'});
         res.end(`<a href="/main">메인으로<a>`);
-        console.log('-------------------Token Destruction-------------------')
+        console.log('-------------------User Info-------------------')
         console.log(JSON.parse(body));
       } else {
         console.log('error');
