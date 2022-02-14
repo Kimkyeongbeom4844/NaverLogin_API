@@ -1,15 +1,18 @@
-var express = require('express');
-var url = require('url');
-var fs = require('fs');
-var app = express();
-var client_id = 'BR9wjsBukM0NVGtNUjSC';
-var client_secret = 'I1qzVZcrAP';
-var state = Math.round(Math.random()*100000000);
-var redirectURI = encodeURI("http://127.0.0.1:3000/callback");
-var api_url = "";
-var token = "";
-var accesstoken = "";
-// var header = "Bearer " + token; //왜 header라고 쓰면 오류가 뜨지?? var let 스코프 차이인가??
+const express = require('express');
+const url = require('url');
+const fs = require('fs');
+let app = express();
+let client_id = 'BR9wjsBukM0NVGtNUjSC';
+let client_secret = 'I1qzVZcrAP';
+let state = Math.round(Math.random()*100000000);
+let redirectURI = encodeURI("http://127.0.0.1:3000/callback");
+let api_url = "";
+let token = "";
+let accesstoken = "";
+let userID = "";
+let refresh_url = "";
+let refresh_token = "";
+// var header = "Bearer " + token; //왜 header라고 쓰면 오류가 뜨지?? var let 스코프 차이인가???
 app.get('/', function (req, res) {
   api_url = 'https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=' + client_id + '&redirect_uri=' + redirectURI + '&state=' + state;
    res.writeHead(200, {'Content-Type': 'text/html;charset=utf-8'});
@@ -27,22 +30,25 @@ app.get('/', function (req, res) {
      };
     request.get(options, function (error, response, body) {
       if (!error && response.statusCode == 200) {
-        console.log('----------------------------토큰 생성----------------------------');
         console.log('-------------------Token Info-------------------');
         token = JSON.parse(body);
         console.log(token);
-        accesstoken = JSON.parse(body).access_token;
+        accesstoken = String(JSON.parse(body).access_token);
+        refresh_token = JSON.parse(body).refresh_token;
         // expire_url = `https://nid.naver.com/oauth2.0/token?grant_type=delete&client_id=${client_id}&client_secret=${client_secret}&access_token=${token}&service_provider=NAVER`
         res.writeHead(200, {'Content-Type': 'text/html;charset=utf-8'});
-        res.end(`<h1>안녕하세요</h1><h2>게시판 메인페이지입니다</h2><a href="/expire">로그아웃</a><br><a href="/member">회원정보조회</a>`);
+        res.end(`<a href="/expire">로그아웃</a><br><a href="/member">회원정보조회</a>`);
         // res.end(body)  
-      } else {
-        res.status(response.statusCode).end();
-        console.log('error = ' + response.statusCode);
+      } 
+      else {
+        res.write("<script>alert('재접속하십시오')</script>");
+        res.writeHead(302,{Location : `/`});
+        res.end();
       }
     });
   });
   app.get('/expire', function (req, res) {
+    console.log(accesstoken);
     var expire_url = `https://nid.naver.com/oauth2.0/token?grant_type=delete&client_id=${client_id}&client_secret=${client_secret}&access_token=${accesstoken}&service_provider=NAVER`;
     var request = require('request');
     var options = {
@@ -51,15 +57,12 @@ app.get('/', function (req, res) {
      };
     request.get(options, function (error, response, body) {
       if (!error && response.statusCode == 200) {
-        console.log('----------------------------로그아웃----------------------------')
         res.writeHead(302,{Location : `https://nid.naver.com/oauth2.0/authorize?response_type=code&state=${state}&redirect_uri=${redirectURI}&client_id=${client_id}&oauth_os=&inapp_view=&locale=ko_KR&auth_type=reauthenticate`});
         res.end();
       } else {
-        console.log('error');
-        if(response != null) {
-          res.status(response.statusCode).end();
-          console.log('error = ' + response.statusCode);
-        }
+        res.write(`<script>alert('장시간 자리를 비워 로그아웃되셨습니다.<br>다시 로그인하시길 바랍니다')</script>`);
+        res.writeHead(302,{Location : `https://nid.naver.com/oauth2.0/authorize?response_type=code&state=${state}&redirect_uri=${redirectURI}&client_id=${client_id}&oauth_os=&inapp_view=&locale=ko_KR&auth_type=reauthenticate`});
+        res.end();
       }
     });
   });
@@ -74,23 +77,47 @@ app.get('/', function (req, res) {
       if (!error && response.statusCode == 200) {
         res.writeHead(200, {'Content-Type': 'text/html;charset=utf-8'});
         res.end(`<a href="/main">메인으로<a>`);
-        console.log('-------------------User Info-------------------')
+        console.log('-------------------User Info-------------------');
+        userID = JSON.parse(body).response.id;
         console.log(JSON.parse(body));
       } else {
-        console.log('error');
-        if(response != null) {
-          res.status(response.statusCode).end();
-          console.log('error = ' + response.statusCode);
-        }
+        res.write(`<script>alert('장시간 자리를 비워 로그아웃되셨습니다.<br>다시 로그인하시길 바랍니다')</script>`);
+        res.writeHead(302,{Location : `https://nid.naver.com/oauth2.0/authorize?response_type=code&state=${state}&redirect_uri=${redirectURI}&client_id=${client_id}&oauth_os=&inapp_view=&locale=ko_KR&auth_type=reauthenticate`});
+        res.end();
       }
     });
   });
   app.get('/main',function(req,res){
-    res.writeHead(200, {'Content-Type': 'text/html;charset=utf-8'});
-    res.end(`<h1>안녕하세요</h1><h2>게시판 메인페이지입니다</h2><a href="/expire">로그아웃</a><br><a href="/member">회원정보조회</a>`);
-    console.log('-------------------Token Info-------------------');
-    console.log(token);
+      refresh_url = `https://nid.naver.com/oauth2.0/token?grant_type=refresh_token&client_id=${client_id}&client_secret=${client_secret}&refresh_token=${refresh_token}`;
+      var request = require('request');
+      var options = {
+        url: refresh_url,
+      };
+      request.get(options, function (error, response, body) {
+      if (!error && response.statusCode == 200) {
+        res.writeHead(200, {'Content-Type': 'text/html;charset=utf-8'});
+        res.end(`<a href="/expire">로그아웃</a><br><a href="/member">회원정보조회</a>`);
+        // console.log('-------------------Token Info-------------------');
+        // console.log(token);
+        console.log('-------------------token refresh-------------------');
+        console.log(JSON.parse(body));
+        accesstoken = JSON.parse(body).access_token;
+      } else {
+        res.write(`<script>alert('장시간 자리를 비워 로그아웃되셨습니다.<br>다시 로그인하시길 바랍니다')</script>`);
+        res.writeHead(302,{Location : `https://nid.naver.com/oauth2.0/authorize?response_type=code&state=${state}&redirect_uri=${redirectURI}&client_id=${client_id}&oauth_os=&inapp_view=&locale=ko_KR&auth_type=reauthenticate`});
+        res.end();
+      }
+    });
+
+    // res.writeHead(200, {'Content-Type': 'text/html;charset=utf-8'});
+    // res.end(`<a href="/expire">로그아웃</a><br><a href="/member">회원정보조회</a>`);
+    // console.log('-------------------Token Info-------------------');
+    // console.log(token);
+
+
   });
+
+
  app.listen(3000, function () {
-   console.log('http://127.0.0.1:3000/ LoginAPI Server is running');
+   console.log('http://127.0.0.1:3000/ app listening on port 3000!');
  });
