@@ -1,9 +1,11 @@
 const express = require('express');
 const url = require('url');
 const fs = require('fs');
+const mysql = require('mysql');
+const secret = require('./secret');
 let app = express();
-let client_id = 'BR9wjsBukM0NVGtNUjSC';
-let client_secret = 'I1qzVZcrAP';
+let client_id = secret.client_id;
+let client_secret = secret.client_secret;
 let state = Math.round(Math.random()*100000000);
 let redirectURI = encodeURI("http://127.0.0.1:3000/callback");
 let api_url = "";
@@ -12,11 +14,29 @@ let accesstoken = "";
 let userID = "";
 let refresh_url = "";
 let refresh_token = "";
+const db = mysql.createConnection(
+  {
+    host : '127.0.0.1',
+    user : 'root',
+    password : secret.db_password,
+    database : 'users'
+  }
+)
+db.connect();
+
+db.query("select * from userinfo where id='1234qwer'",function(err,xxx){
+  if(err){
+    console.error(err);
+  }
+  console.log('DataBase is connected');
+})
+// db.end();
+
 // var header = "Bearer " + token; //왜 header라고 쓰면 오류가 뜨지?? var let 스코프 차이인가???
 app.get('/', function (req, res) {
   api_url = 'https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=' + client_id + '&redirect_uri=' + redirectURI + '&state=' + state;
    res.writeHead(200, {'Content-Type': 'text/html;charset=utf-8'});
-   res.end("<a href='"+ api_url + "'><img height='50' src='http://static.nid.naver.com/oauth/small_g_in.PNG'/></a>");
+   res.end(`<a href='${api_url}'><img height='50' src='http://static.nid.naver.com/oauth/small_g_in.PNG'/></a>`);
  });
  app.get('/callback', function (req, res) {
     code = req.query.code;
@@ -79,7 +99,14 @@ app.get('/', function (req, res) {
         res.end(`<a href="/main">메인으로<a>`);
         console.log('-------------------User Info-------------------');
         userID = JSON.parse(body).response.id;
+        userName = JSON.parse(body).response.name;
         console.log(JSON.parse(body));
+        db.query(`insert into userinfo (id,name,created) values('${userID}','${userName}',now())`,function(err,xxx){
+          if(err){
+            console.error(err);
+          }
+          console.log('유저 정보 추가');
+        })
       } else {
         res.write(`<script>alert('장시간 자리를 비워 로그아웃되셨습니다.<br>다시 로그인하시길 바랍니다')</script>`);
         res.writeHead(302,{Location : `https://nid.naver.com/oauth2.0/authorize?response_type=code&state=${state}&redirect_uri=${redirectURI}&client_id=${client_id}&oauth_os=&inapp_view=&locale=ko_KR&auth_type=reauthenticate`});
@@ -119,5 +146,5 @@ app.get('/', function (req, res) {
 
 
  app.listen(3000, function () {
-   console.log('http://127.0.0.1:3000/ app listening on port 3000!');
+   console.log('http://127.0.0.1:3000/ app is listening on port 3000!');
  });
